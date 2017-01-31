@@ -2,6 +2,7 @@ import processing.core.PApplet;
 
 public class Robot{
 
+  //variables
   private int colour;
   private int direction;
   private float xPos1;
@@ -10,31 +11,110 @@ public class Robot{
   private float yPos2;
   private float xPos3;
   private float yPos3;
-  private float size;
+  private float xCenter;
+  private float yCenter;
+  private float position;
+  private float pointA;
+  private float pointB;
   private float speed;
+  int rotation;
   private PApplet screen;
 
-  public Robot(PApplet s, int colour, float xPos1, float yPos1,  float xPos2, float yPos2, float xPos3, float yPos3,float speed){
+  //Constructor
+  public Robot(PApplet s, int colour,float xPosition, float yPosition, float size, float speed, int rotation){
     direction = 1;
     screen = s;
     this.colour = colour;
-    this.xPos1 = xPos1;
-    this.yPos1 = yPos1;
-    this.xPos2 = xPos2;
-    this.yPos2 = yPos2;
-    this.xPos3 = xPos3;
-    this.yPos3 = yPos3;
     this.speed = speed;
-    size = xPos2 - xPos1;
+    this.robotSize(size, xPosition, yPosition);
+    this.pointA = xPos2 - xPos1;
+    this.xCenter = xPosition + pointA;
+    this.yCenter = yPosition + pointA;
+    this.rotation = rotation;
   }
 
-  public void display(){
+  //Methods
+
+  //Defines robot size and position
+  private void robotSize(float size, float xCenter, float yCenter){
+    if (size > 5){      
+      this.xPos1 = 10 * 5;
+      this.yPos1 = 10 * 5;
+      this.xPos2 = 20 * 5;
+      this.yPos2 = 15 * 5;
+      this.xPos3 = 10 * 5;
+      this.yPos3 = 20 * 5;
+    } else if(size < 1){        
+        this.xPos1 = 10 * 1;
+        this.yPos1 = 10 * 1;
+        this.xPos2 = 20 * 1;
+        this.yPos2 = 15 * 1;
+        this.xPos3 = 10 * 1;
+        this.yPos3 = 20 * 1;
+    } else{
+        this.xPos1 = (10 * size) + xCenter;
+        this.yPos1 = (10 * size) + yCenter;
+        this.xPos2 = (20 * size) + xCenter;
+        this.yPos2 = (15 * size) + yCenter;
+        this.xPos3 = (10 * size) + xCenter;
+        this.yPos3 = (20 * size) + yCenter;
+    }
+  }
+
+  //Calculates triangle center for rotate method
+  private void triangleCenter(){
+    this.xCenter = ((xPos1 + xPos2 + xPos3)/3);
+    this.yCenter = ((yPos1 + yPos2 + yPos3)/3);
+  }
+
+  //Rotates matrix
+  private void rotateRobot(int rotation){
+    screen.pushMatrix();
+    screen.translate(xCenter, yCenter);
+    screen.rotate(screen.radians((int)rotation));
     screen.fill(colour);
-    screen.triangle(this.xPos1, this.yPos1, this.xPos2, this.yPos2, this.xPos3, this.yPos3);
+    screen.triangle(-pointA/2, -pointA/2, pointA/2, 0, -pointA/2, pointA/2);
     screen.fill(26);
-    screen.ellipse(xPos2+5, yPos2, 10, 10);
+    screen.ellipse(pointA/2 + 5, 0, 10, 10);
+    screen.popMatrix();
   }
 
+  //Used to display robot on screen
+  public void display(){
+    rotateRobot(rotation);
+  }
+  
+  //All moviments starts on this method, defining the direction and rotate axis
+  public void patrol(){
+    switch(direction){
+      case 1:
+        this.rotation = 0;
+        this.triangleCenter();
+        this.rotateRobot(rotation);
+        this.moveForward();
+        break;
+      case 2:
+        this.rotation = 90;
+        this.triangleCenter();
+        this.rotateRobot(rotation);
+        this.moveDown();
+        break;
+      case 3:
+        this.rotation = 180;
+        this.triangleCenter();
+        this.rotateRobot(rotation);
+        this.moveBackward();
+        break;
+      case 4:
+        this.rotation = 270;
+        this.triangleCenter();
+        this.rotateRobot(rotation);
+        this.moveUp();
+        break;
+    }
+  }
+
+  //Call the keyPressed method for keyboard remote control
   public void stroll(){
     keyPressed();
   }
@@ -42,77 +122,59 @@ public class Robot{
   private void keyPressed(){
     if ((screen.keyPressed == true) && (screen.key == 'd')) {
       this.direction = 1;
-      this.patrol();
+      if(this.xPos2 + (pointA/2) <= screen.width){
+        this.patrol();
+      }else{
+        this.display();
+      }
     }else if ((screen.keyPressed == true) && (screen.key == 's')) {
       this.direction = 2;
-      this.patrol();
+      if(this.xPos3 + (pointA/2) <= screen.width){
+        this.patrol();
+      }else{
+        this.display();
+      }
     }else if ((screen.keyPressed == true) && (screen.key == 'a')) {
       this.direction = 3;
-      this.patrol();
+      if(this.xPos3 - (pointA/2) <= screen.width){
+        this.patrol();
+      }else{
+        this.display();
+      }
     }else if ((screen.keyPressed == true) && (screen.key == 'w')) {
       this.direction = 4;
-      this.patrol();
+      if(this.xPos1 - (pointA/2) <= screen.width){
+        this.patrol();
+      }else{
+        this.display();
+      }
     }else {
-      display();
-    }
-    
+      this.display();
+    }    
   }
 
-  public void bounce(){
-    if(direction == 4){
-      this.direction = 1;
-    }else if(direction == 2){
-      this.direction++;
-    }else if(direction == 1){
+  //random walk method
+  public void randomWalk(){
+    if(direction == 1 && this.xPos2 + (pointA/2) >= screen.width){
+      this.direction = (int)screen.random(1, 5);
+      this.patrol();
+    }else if(direction == 2 && this.yPos3 + (pointA/2) >= screen.height){
+      this.direction = (int)screen.random(1, 5);
+      this.patrol();
+    }else if(direction == 3 && this.xPos3 - (pointA/2) <= 0){
+      this.direction = (int)screen.random(1, 5);
+      this.patrol();
+    }else if(direction == 4 && this.yPos1 - (pointA/2) <= 0){
+      this.direction = (int)screen.random(1, 5);
       this.patrol();
     }else{
       this.patrol();
     }
   }
 
-  public void patrol(){
-    switch(direction){
-      case 1:
-        screen.pushMatrix();
-        screen.translate(xPos1, yPos1);
-        rotateRobot(0);
-        screen.popMatrix();
-        this.moveForward();
-        break;
-      case 2:    
-        screen.pushMatrix();
-        screen.translate(xPos1+50, yPos1);
-        rotateRobot(90);
-        screen.popMatrix();
-        this.moveDown();
-        break;
-      case 3:
-        screen.pushMatrix();
-        screen.translate(xPos2, yPos3);
-        rotateRobot(180);
-        screen.popMatrix();
-        this.moveBackward();
-        break;
-      case 4:
-        screen.pushMatrix();
-        screen.translate(xPos3, yPos3);
-        rotateRobot(270);
-        screen.popMatrix();
-        this.moveUp();
-        break;
-    }
-  }
-
-  private void rotateRobot(int angle){;
-    screen.rotate(screen.radians((int)angle));
-    screen.fill(colour);
-    screen.triangle(0, 0, 50, 25, 0, 50);
-    screen.fill(26);
-    screen.ellipse(55, 25, 10, 10);
-  }
-
+  //Movement methods
   private void moveForward(){
-    if(this.xPos2+5 >= screen.width){
+    if(this.xPos2 + (pointA/2) >= screen.width){
       this.direction++;
     }else {
       this.xPos1 = this.xPos1 + this.speed;
@@ -122,7 +184,7 @@ public class Robot{
   }
 
   private void moveBackward(){
-    if(this.xPos3-5 <= 0){
+    if(this.xPos3 - (pointA/2) <= 0){
       this.direction++;
     }else {
       this.xPos1 = this.xPos1 - this.speed;
@@ -132,7 +194,7 @@ public class Robot{
   }
 
   private void moveDown(){
-    if(this.yPos3+5 >= screen.height){
+    if(this.yPos3 + (pointA/2) >= screen.height){
       this.direction++;
     }else {
       this.yPos1 = this.yPos1 + this.speed;
@@ -142,7 +204,7 @@ public class Robot{
   }
 
   private void moveUp(){
-    if(this.yPos1-5 <= 0){
+    if(this.yPos1 - (pointA/2) <= 0){
       this.direction = 1;
     }else {
       this.yPos1 = this.yPos1 - this.speed;
@@ -154,5 +216,4 @@ public class Robot{
   public void stop(){
       display();
   }
-
 }
